@@ -39,7 +39,7 @@ dsh plugin add --save-exact dsh-feishu-control
 然后在普通终端运行配置向导：
 
 ```sh
-pnpm dlx dsh-feishu-control setup
+pnpm dlx dsh-feishu-control@latest setup
 ```
 
 向导会逐步完成：
@@ -71,10 +71,10 @@ Harness `0.1.0-rc.8` 及以上版本禁止在 `.env` 中使用 `DSH_*` 名称，
 
 ```sh
 # 检查是否安装和配置完整（不会显示密钥）
-pnpm dlx dsh-feishu-control doctor
+pnpm dlx dsh-feishu-control@latest doctor
 
 # 仅限独立终端模式：在向导保存的工作目录中启动
-pnpm dlx dsh-feishu-control start
+pnpm dlx dsh-feishu-control@latest start
 ```
 
 Desktop 用户不要另外运行 `start`；请完全退出并重新打开 DeepSeek Harness Desktop。
@@ -120,7 +120,7 @@ export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 
 ```sh
 dsh plugin add --save-exact dsh-feishu-control
-pnpm dlx dsh-feishu-control setup
+pnpm dlx dsh-feishu-control@latest setup
 ```
 
 安装及配置完成后，完全退出并重新打开 DeepSeek Harness Desktop。插件广场命令使用当前 Desktop Profile，因此不需要手工指定 `--profile`。

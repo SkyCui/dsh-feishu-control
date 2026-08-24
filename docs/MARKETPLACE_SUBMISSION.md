@@ -29,7 +29,7 @@ coded text fallback, and group chats disabled by default.
 
 ```sh
 dsh plugin add --save-exact dsh-feishu-control
-pnpm dlx dsh-feishu-control setup
+pnpm dlx dsh-feishu-control@latest setup
 ```
 
 Then fully quit and reopen DeepSeek Harness Desktop. The setup wizard detects

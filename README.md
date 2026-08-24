@@ -39,7 +39,7 @@ dsh plugin add --save-exact dsh-feishu-control
 Then run the configuration wizard in a normal terminal:
 
 ```sh
-pnpm dlx dsh-feishu-control setup
+pnpm dlx dsh-feishu-control@latest setup
 ```
 
 The wizard checks `dsh` and `pnpm`, confirms that Harness has run successfully, walks through the required Feishu application settings, collects credentials without displaying the secret, and configures the sender allowlist and restricted workspace. It finds the Profile where the marketplace installed the plugin, skips duplicate installation, validates that Profile, and tells Desktop users to restart. If the plugin is not installed, it clearly switches to standalone-terminal mode and creates an exact-version `feishu-control` Profile.
@@ -60,9 +60,9 @@ If you do not know your `open_id`, use this first-authorization flow:
 After installation:
 
 ```sh
-pnpm dlx dsh-feishu-control doctor
+pnpm dlx dsh-feishu-control@latest doctor
 # Standalone-terminal mode only:
-pnpm dlx dsh-feishu-control start
+pnpm dlx dsh-feishu-control@latest start
 ```
 
 Desktop users should not run `start`; fully quit and reopen DeepSeek Harness Desktop instead.
@@ -108,7 +108,7 @@ Never commit `.env` or real credentials. This repository's `.env.example` contai
 
 ```sh
 dsh plugin add --save-exact dsh-feishu-control
-pnpm dlx dsh-feishu-control setup
+pnpm dlx dsh-feishu-control@latest setup
 ```
 
 Fully quit and reopen DeepSeek Harness Desktop after installation and configuration. The marketplace command targets the active Desktop Profile, so it does not need an explicit `--profile`.

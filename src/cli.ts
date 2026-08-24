@@ -192,7 +192,7 @@ function printHelp(): void {
 
 首次使用（无需克隆仓库）：
   dsh plugin add --save-exact dsh-feishu-control
-  pnpm dlx dsh-feishu-control setup
+  pnpm dlx dsh-feishu-control@latest setup
 
 重要：本插件不是 DeepSeek Harness 本体。使用前必须先安装 dsh，
 完成 DeepSeek 模型/API 配置，并至少成功启动过一次 DeepSeek Harness。
@@ -351,7 +351,7 @@ ${installCurrentVersion
     }
 
     if (options.noStart || !await prompter.confirm('现在启动飞书控制服务？', true)) {
-      process.stdout.write('\n稍后可运行：pnpm dlx dsh-feishu-control start\n')
+      process.stdout.write('\n稍后可运行：pnpm dlx dsh-feishu-control@latest start\n')
       return 0
     }
     prompter.close()

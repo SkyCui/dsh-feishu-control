@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.3 - 2026-08-24
+
+### Changed
+
+- Use an explicit `dsh-feishu-control@latest` package selector in every
+  user-facing `pnpm dlx` command across the CLI, bot guidance, documentation,
+  and marketplace submission notes.
+
 ## 0.1.2 - 2026-08-24
 
 ### Fixed
