@@ -132,7 +132,7 @@ dsh --profile feishu-control
 #### 从 GitHub 安装
 
 ```sh
-dsh plugin --profile feishu-control add --save-exact github:Skycui/dsh-feishu-control#<commit-sha>
+dsh plugin --profile feishu-control add --save-exact github:SkyCui/dsh-feishu-control#<commit-sha>
 ```
 
 Git 安装会执行本包的 `prepare` 构建脚本。pnpm 10 及以上默认阻止依赖安装脚本；第一次安装若被拒绝，请按照 `dsh`/pnpm 输出，把精确的包键加入该 profile 的 `pnpm-workspace.yaml` 中的 `allowBuilds`，然后使用固定 commit SHA 重试。只应授权可信源码。

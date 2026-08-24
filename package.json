@@ -4,11 +4,11 @@
   "description": "Secure Feishu remote control bundle for DeepSeek Harness",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Skycui/dsh-feishu-control.git"
+    "url": "git+https://github.com/SkyCui/dsh-feishu-control.git"
   },
-  "homepage": "https://github.com/Skycui/dsh-feishu-control#readme",
+  "homepage": "https://github.com/SkyCui/dsh-feishu-control#readme",
   "bugs": {
-    "url": "https://github.com/Skycui/dsh-feishu-control/issues"
+    "url": "https://github.com/SkyCui/dsh-feishu-control/issues"
   },
   "type": "module",
   "main": "./lib/feishu/index.js",

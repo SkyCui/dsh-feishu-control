@@ -120,7 +120,7 @@ The plugin prefers `DSH_FEISHU_WORKSPACE` as both the Agent working directory an
 #### GitHub
 
 ```sh
-dsh plugin --profile feishu-control add --save-exact github:Skycui/dsh-feishu-control#<commit-sha>
+dsh plugin --profile feishu-control add --save-exact github:SkyCui/dsh-feishu-control#<commit-sha>
 ```
 
 A Git dependency runs this package's `prepare` build. pnpm 10 and newer block dependency install scripts until explicitly allowed. If the first install is rejected, follow the `dsh`/pnpm diagnostic, copy its exact package key into that profile's `pnpm-workspace.yaml` `allowBuilds` section, and retry with a pinned commit SHA. Authorize only trusted source.

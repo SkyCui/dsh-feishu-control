@@ -1,6 +1,6 @@
 # Marketplace submission draft
 
-Canonical repository: `https://github.com/Skycui/dsh-feishu-control`.
+Canonical repository: `https://github.com/SkyCui/dsh-feishu-control`.
 
 ## Identity
 
@@ -8,7 +8,7 @@ Canonical repository: `https://github.com/Skycui/dsh-feishu-control`.
 - Type: DeepSeek Harness bundle (`dsh.bundle`)
 - Category: Integrations / Runtime
 - npm package: `dsh-feishu-control`
-- Repository: `https://github.com/Skycui/dsh-feishu-control`
+- Repository: `https://github.com/SkyCui/dsh-feishu-control`
 - License: MIT
 - Profile name used in examples: `feishu-control`
 
