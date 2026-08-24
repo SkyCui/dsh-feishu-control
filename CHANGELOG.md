@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.1 - 2026-08-24
+
+### Fixed
+
+- Use Harness-compatible `FEISHU_CONTROL_*` dotenv names because Harness
+  `0.1.0-rc.8` rejects bootstrap-owned `DSH_*` names in dotenv files.
+- Automatically migrate the legacy `DSH_FEISHU_*` setup values without
+  printing or discarding stored credentials.
+- Keep legacy `DSH_FEISHU_*` values as launch-environment-only fallbacks.
+- Normalize the published `feishu-control` binary path to avoid npm's
+  package-manifest auto-correction warning.
+
 ## 0.1.0 - 2026-08-23
 
 ### Added

@@ -21,9 +21,13 @@ export const name = 'feishu-local'
 export const inject = ['feishu']
 
 /** Default env var name the app id falls back to. */
-export const DEFAULT_APP_ID_ENV = 'DSH_FEISHU_APP_ID'
+export const DEFAULT_APP_ID_ENV = 'FEISHU_CONTROL_APP_ID'
 /** Default env var name the app secret falls back to. */
-export const DEFAULT_APP_SECRET_ENV = 'DSH_FEISHU_APP_SECRET'
+export const DEFAULT_APP_SECRET_ENV = 'FEISHU_CONTROL_APP_SECRET'
+/** Legacy inherited env var accepted for backwards compatibility. */
+export const LEGACY_APP_ID_ENV = 'DSH_FEISHU_APP_ID'
+/** Legacy inherited env var accepted for backwards compatibility. */
+export const LEGACY_APP_SECRET_ENV = 'DSH_FEISHU_APP_SECRET'
 
 /** Plugin config: literal credentials or the env var names that hold them. */
 export interface Config {
@@ -31,9 +35,9 @@ export interface Config {
   appId?: string
   /** Literal Feishu app secret; prefer {@link appSecretEnv} so no secret enters configuration files. */
   appSecret?: string
-  /** Env var name holding the app id; defaults to `DSH_FEISHU_APP_ID`. */
+  /** Env var name holding the app id; defaults to `FEISHU_CONTROL_APP_ID`. */
   appIdEnv?: string
-  /** Env var name holding the app secret; defaults to `DSH_FEISHU_APP_SECRET`. */
+  /** Env var name holding the app secret; defaults to `FEISHU_CONTROL_APP_SECRET`. */
   appSecretEnv?: string
 }
 
@@ -46,11 +50,17 @@ export const Config: z<Config> = z.object({
 
 /** Register the Feishu long-connection provider with `ctx.feishu`. */
 export function apply(ctx: Context, config: Config): void {
-  const appId = config.appId ?? process.env[config.appIdEnv ?? DEFAULT_APP_ID_ENV] ?? ''
-  const appSecret = config.appSecret ?? process.env[config.appSecretEnv ?? DEFAULT_APP_SECRET_ENV] ?? ''
+  const appId = config.appId
+    ?? process.env[config.appIdEnv ?? DEFAULT_APP_ID_ENV]
+    ?? (config.appIdEnv === undefined ? process.env[LEGACY_APP_ID_ENV] : undefined)
+    ?? ''
+  const appSecret = config.appSecret
+    ?? process.env[config.appSecretEnv ?? DEFAULT_APP_SECRET_ENV]
+    ?? (config.appSecretEnv === undefined ? process.env[LEGACY_APP_SECRET_ENV] : undefined)
+    ?? ''
   if (appId === '' || appSecret === '') {
     throw new FeishuError(
-      'Feishu credentials are missing; set DSH_FEISHU_APP_ID and DSH_FEISHU_APP_SECRET',
+      'Feishu credentials are missing; set FEISHU_CONTROL_APP_ID and FEISHU_CONTROL_APP_SECRET',
       'FEISHU_CREDENTIALS_MISSING',
     )
   }

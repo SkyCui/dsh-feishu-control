@@ -177,7 +177,7 @@ export function apply(ctx: Context, config: Config): void {
     if (event.chatType === 'group' && !config.allowGroupChats) return
     if (event.chatType === 'group' && config.requireMentionInGroups && !event.mentioned) return
     if (!allowed.has(event.senderOpenId)) {
-      void sendText(event.chatId, `未授权：你的 open_id（${event.senderOpenId}）不在白名单中。请把它加入 DSH_FEISHU_ALLOWED_OPEN_IDS 后重启。`)
+      void sendText(event.chatId, `未授权：你的 open_id（${event.senderOpenId}）不在白名单中。请把它加入 FEISHU_CONTROL_ALLOWED_OPEN_IDS 后重启。`)
         .catch(() => {})
       return
     }

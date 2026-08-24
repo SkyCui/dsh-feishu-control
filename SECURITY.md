@@ -15,7 +15,7 @@ This plugin lets a Feishu message drive a coding agent on the host machine. The 
 - Approval decisions are accepted only from allowlisted operators and the originating chat.
 - Recent Feishu message IDs are retained in memory to suppress redelivery.
 - Unanswered and withdrawn approval requests fail closed.
-- The recommended deployment uses `DSH_PERMISSION_MODE=workspace-write` and a
+- The recommended deployment uses `FEISHU_CONTROL_PERMISSION_MODE=workspace-write` and a
   dedicated project directory as the process working directory.
 
 Only the latest released version receives security fixes.

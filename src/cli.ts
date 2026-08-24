@@ -6,6 +6,9 @@ import { createInterface, type Interface } from 'node:readline/promises'
 import process from 'node:process'
 import {
   findInstalledProfiles,
+  installedPluginSpec,
+  LEGACY_MANAGED_ENV_KEYS,
+  migrateLegacyHarnessEnv,
   PROFILE_NAME,
   readHarnessEnv,
   readLocalState,
@@ -28,11 +31,30 @@ interface Options {
 }
 
 const PACKAGE_NAME = 'dsh-feishu-control'
+const ENV = {
+  appId: 'FEISHU_CONTROL_APP_ID',
+  appSecret: 'FEISHU_CONTROL_APP_SECRET',
+  allowedOpenIds: 'FEISHU_CONTROL_ALLOWED_OPEN_IDS',
+  workspace: 'FEISHU_CONTROL_WORKSPACE',
+  permissionMode: 'FEISHU_CONTROL_PERMISSION_MODE',
+} as const
+const LEGACY_ENV = {
+  appId: 'DSH_FEISHU_APP_ID',
+  appSecret: 'DSH_FEISHU_APP_SECRET',
+  allowedOpenIds: 'DSH_FEISHU_ALLOWED_OPEN_IDS',
+  workspace: 'DSH_FEISHU_WORKSPACE',
+  permissionMode: 'DSH_PERMISSION_MODE',
+} as const
+
+function configuredValue(values: Record<string, string>, key: string, legacyKey: string): string | undefined {
+  return process.env[key] || process.env[legacyKey] || values[key] || values[legacyKey]
+}
 
 interface InstallationTarget {
   profile: string
   mode: 'desktop' | 'standalone'
   alreadyInstalled: boolean
+  installedSpec?: string
 }
 
 async function resolveInstallationTarget(dshHome: string): Promise<InstallationTarget> {
@@ -41,13 +63,27 @@ async function resolveInstallationTarget(dshHome: string): Promise<InstallationT
   const savedProfile = state !== undefined && profiles.includes(state.profile) ? state.profile : undefined
   const profile = savedProfile || profiles[0]
   if (profile !== undefined) {
+    const installedSpec = await installedPluginSpec(dshHome, profile)
     return {
       profile,
       mode: state?.profile === profile ? state.mode : profile === PROFILE_NAME ? 'standalone' : 'desktop',
       alreadyInstalled: true,
+      ...(installedSpec === undefined ? {} : { installedSpec }),
     }
   }
   return { profile: PROFILE_NAME, mode: 'standalone', alreadyInstalled: false }
+}
+
+function isSourceInstall(spec: string): boolean {
+  if (spec.startsWith('file:') && spec.endsWith('.tgz')) return false
+  return /^(?:link:|file:|git(?:hub)?:|https?:|ssh:)/.test(spec)
+}
+
+function shouldInstallCurrentVersion(installation: InstallationTarget, version: string, explicitSpec?: string): boolean {
+  if (!installation.alreadyInstalled || explicitSpec !== undefined) return true
+  const spec = installation.installedSpec
+  if (spec === undefined || isSourceInstall(spec)) return false
+  return spec !== version && spec !== `=${version}`
 }
 
 function parseArgs(argv: string[]): Options {
@@ -196,6 +232,11 @@ async function setup(options: Options): Promise<number> {
 
 `)
 
+  const migration = await migrateLegacyHarnessEnv(dshHome)
+  if (migration.migrated) {
+    process.stdout.write('✓ 已将旧版 DSH_FEISHU_* 配置安全迁移为 Harness 兼容名称；已保存的密钥不会显示。\n')
+  }
+
   if (!requireCommand('dsh', ['--version'])) {
     process.stderr.write('未找到可用的 dsh。请先安装并成功运行 DeepSeek Harness，再重新执行本向导。\n')
     return 2
@@ -221,7 +262,7 @@ async function setup(options: Options): Promise<number> {
 
     const installation = await resolveInstallationTarget(dshHome)
     if (installation.alreadyInstalled) {
-      process.stdout.write(`✓ 已在 DSH profile “${installation.profile}” 中检测到 ${PACKAGE_NAME}，向导不会重复安装。\n`)
+      process.stdout.write(`✓ 已在 DSH profile “${installation.profile}” 中检测到 ${PACKAGE_NAME}${installation.installedSpec === undefined ? '' : `（${installation.installedSpec}）`}。\n`)
     } else {
       process.stdout.write(`未检测到插件广场安装，将使用独立终端模式创建 DSH profile “${PROFILE_NAME}”。\n`)
     }
@@ -241,8 +282,12 @@ async function setup(options: Options): Promise<number> {
     }
 
     const current = await readHarnessEnv(dshHome)
-    const appId = await askRequired(prompter, '请输入飞书 App ID', options.appId || current.values.DSH_FEISHU_APP_ID)
-    let appSecret = current.values.DSH_FEISHU_APP_SECRET || process.env.DSH_FEISHU_APP_SECRET || ''
+    const appId = await askRequired(
+      prompter,
+      '请输入飞书 App ID',
+      options.appId || configuredValue(current.values, ENV.appId, LEGACY_ENV.appId),
+    )
+    let appSecret = configuredValue(current.values, ENV.appSecret, LEGACY_ENV.appSecret) || ''
     if (appSecret !== '' && !await prompter.confirm('检测到已保存的 App Secret，是否继续使用？', true)) appSecret = ''
     appSecret = await askRequired(prompter, '请输入飞书 App Secret', appSecret, true)
 
@@ -254,15 +299,19 @@ async function setup(options: Options): Promise<number> {
     const allowedOpenIds = await askRequired(
       prompter,
       '请输入允许使用机器人的 open_id；多人用英文逗号分隔',
-      options.allowedOpenIds || current.values.DSH_FEISHU_ALLOWED_OPEN_IDS,
+      options.allowedOpenIds || configuredValue(current.values, ENV.allowedOpenIds, LEGACY_ENV.allowedOpenIds),
     )
     const workspace = await askWorkspace(prompter, options.workspace || process.cwd(), dshHome)
 
+    const version = await packageVersion()
+    const packageSpec = options.packageSpec || `${PACKAGE_NAME}@${version}`
+    const installCurrentVersion = shouldInstallCurrentVersion(installation, version, options.packageSpec)
+
     process.stdout.write(`
 即将执行：
-${installation.alreadyInstalled
-    ? `- 使用已经安装插件的 DSH profile “${installation.profile}”，不重复安装`
-    : `- 以精确版本安装 ${PACKAGE_NAME} 到独立 DSH profile “${installation.profile}”`}
+${installCurrentVersion
+    ? `- 将 ${packageSpec} 精确安装到 DSH profile “${installation.profile}”`
+    : `- 保留 DSH profile “${installation.profile}” 中现有安装 ${installation.installedSpec || ''}`}
 - 把飞书凭证保存到 ${current.path}（权限仅限当前系统用户）
 - 将 Agent 工作目录限制为 ${workspace}
 
@@ -271,23 +320,21 @@ ${installation.alreadyInstalled
 `)
     if (!options.yes && !await prompter.confirm('确认继续？')) return 1
 
-    if (!installation.alreadyInstalled) {
-      const version = await packageVersion()
-      const packageSpec = options.packageSpec || `${PACKAGE_NAME}@${version}`
-      process.stdout.write('\n正在安装独立终端 Profile……\n')
+    if (installCurrentVersion) {
+      process.stdout.write(`\n正在${installation.alreadyInstalled ? '更新' : '安装'} DSH Profile……\n`)
       if (!run('dsh', ['plugin', '--profile', installation.profile, 'add', '--save-exact', packageSpec], { dshHome })) {
-        process.stderr.write('插件安装失败。上方是 dsh/pnpm 的原始错误；凭证尚未写入。\n')
+        process.stderr.write('插件安装失败。上方是 dsh/pnpm 的原始错误；除已完成的旧变量迁移外，其他配置尚未改动。\n')
         return 2
       }
     }
 
     await writeHarnessEnv(dshHome, current.source, {
-      DSH_FEISHU_APP_ID: appId,
-      DSH_FEISHU_APP_SECRET: appSecret,
-      DSH_FEISHU_ALLOWED_OPEN_IDS: allowedOpenIds,
-      DSH_FEISHU_WORKSPACE: workspace,
-      DSH_PERMISSION_MODE: 'workspace-write',
-    })
+      [ENV.appId]: appId,
+      [ENV.appSecret]: appSecret,
+      [ENV.allowedOpenIds]: allowedOpenIds,
+      [ENV.workspace]: workspace,
+      [ENV.permissionMode]: 'workspace-write',
+    }, LEGACY_MANAGED_ENV_KEYS)
     await writeLocalState(dshHome, { profile: installation.profile, workspace, mode: installation.mode })
 
     process.stdout.write('\n正在检查最终配置……\n')
@@ -325,9 +372,9 @@ ${installation.alreadyInstalled
 
 async function setupNonInteractive(options: Options, dshHome: string): Promise<number> {
   const current = await readHarnessEnv(dshHome)
-  const appId = options.appId || process.env.DSH_FEISHU_APP_ID || current.values.DSH_FEISHU_APP_ID
-  const appSecret = process.env.DSH_FEISHU_APP_SECRET || current.values.DSH_FEISHU_APP_SECRET
-  const allowedOpenIds = options.allowedOpenIds || process.env.DSH_FEISHU_ALLOWED_OPEN_IDS || current.values.DSH_FEISHU_ALLOWED_OPEN_IDS
+  const appId = options.appId || configuredValue(current.values, ENV.appId, LEGACY_ENV.appId)
+  const appSecret = configuredValue(current.values, ENV.appSecret, LEGACY_ENV.appSecret)
+  const allowedOpenIds = options.allowedOpenIds || configuredValue(current.values, ENV.allowedOpenIds, LEGACY_ENV.allowedOpenIds)
   const workspaceInput = options.workspace
   if (!options.yes || !appId || !appSecret || !allowedOpenIds || !workspaceInput) {
     process.stderr.write('非交互模式需要 --yes、--app-id、--allowed-open-ids、--workspace，并通过环境变量提供 App Secret。\n')
@@ -335,17 +382,18 @@ async function setupNonInteractive(options: Options, dshHome: string): Promise<n
   }
   const workspace = await validateWorkspace(workspaceInput, dshHome)
   const installation = await resolveInstallationTarget(dshHome)
-  if (!installation.alreadyInstalled) {
-    const packageSpec = options.packageSpec || `${PACKAGE_NAME}@${await packageVersion()}`
+  const version = await packageVersion()
+  if (shouldInstallCurrentVersion(installation, version, options.packageSpec)) {
+    const packageSpec = options.packageSpec || `${PACKAGE_NAME}@${version}`
     if (!run('dsh', ['plugin', '--profile', installation.profile, 'add', '--save-exact', packageSpec], { dshHome })) return 2
   }
   await writeHarnessEnv(dshHome, current.source, {
-    DSH_FEISHU_APP_ID: appId,
-    DSH_FEISHU_APP_SECRET: appSecret,
-    DSH_FEISHU_ALLOWED_OPEN_IDS: allowedOpenIds,
-    DSH_FEISHU_WORKSPACE: workspace,
-    DSH_PERMISSION_MODE: 'workspace-write',
-  })
+    [ENV.appId]: appId,
+    [ENV.appSecret]: appSecret,
+    [ENV.allowedOpenIds]: allowedOpenIds,
+    [ENV.workspace]: workspace,
+    [ENV.permissionMode]: 'workspace-write',
+  }, LEGACY_MANAGED_ENV_KEYS)
   await writeLocalState(dshHome, { profile: installation.profile, workspace, mode: installation.mode })
   const valid = run('dsh', ['--profile', installation.profile, '--dump-config'], { dshHome, quiet: true })
   if (!valid) run('dsh', ['--profile', installation.profile, '--dump-config'], { dshHome })
@@ -363,11 +411,15 @@ async function doctor(options: Options): Promise<number> {
   const installed = profile !== undefined
   checks.push([`插件已安装${installed ? `（profile: ${installedProfiles.join(', ')}）` : ''}`, installed, '先从插件广场安装，或运行 feishu-control setup'])
   const env = await readHarnessEnv(dshHome)
-  for (const key of ['DSH_FEISHU_APP_ID', 'DSH_FEISHU_APP_SECRET', 'DSH_FEISHU_ALLOWED_OPEN_IDS']) {
-    checks.push([`${key} 已配置`, Boolean(process.env[key] || env.values[key]), '运行 feishu-control setup'])
+  for (const [key, legacyKey] of [
+    [ENV.appId, LEGACY_ENV.appId],
+    [ENV.appSecret, LEGACY_ENV.appSecret],
+    [ENV.allowedOpenIds, LEGACY_ENV.allowedOpenIds],
+  ] as const) {
+    checks.push([`${key} 已配置`, Boolean(configuredValue(env.values, key, legacyKey)), '运行 feishu-control setup'])
   }
   let workspaceValid = false
-  const configuredWorkspace = state?.workspace || process.env.DSH_FEISHU_WORKSPACE || env.values.DSH_FEISHU_WORKSPACE
+  const configuredWorkspace = state?.workspace || configuredValue(env.values, ENV.workspace, LEGACY_ENV.workspace)
   if (configuredWorkspace !== undefined) {
     try { await validateWorkspace(configuredWorkspace, dshHome); workspaceValid = true } catch { /* reported below */ }
   }

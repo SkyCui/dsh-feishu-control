@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'node:fs'
 
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-if (manifest.bin?.['feishu-control'] !== './lib/cli.js') throw new Error('missing feishu-control executable')
+if (manifest.bin?.['feishu-control'] !== 'lib/cli.js') throw new Error('missing feishu-control executable')
 if (!readFileSync(new URL('../lib/cli.js', import.meta.url), 'utf8').startsWith('#!/usr/bin/env node')) {
   throw new Error('lib/cli.js is missing its node shebang')
 }

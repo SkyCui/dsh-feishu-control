@@ -1,6 +1,6 @@
 {
   "name": "dsh-feishu-control",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Secure Feishu remote control bundle for DeepSeek Harness",
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   "main": "./lib/feishu/index.js",
   "types": "./lib/feishu/index.d.ts",
   "bin": {
-    "feishu-control": "./lib/cli.js"
+    "feishu-control": "lib/cli.js"
   },
   "exports": {
     ".": {

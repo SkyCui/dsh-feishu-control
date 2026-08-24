@@ -56,6 +56,8 @@ pnpm dlx dsh-feishu-control setup
 
 向导将飞书凭证保存到 `$DSH_HOME/.env`（默认是 `~/.dsh/.env`），并把文件权限设为仅当前系统用户可读写。这个文件不会位于项目仓库中，但同一系统账户下运行的程序和 Agent 工具仍可能读取它；建议使用专用低权限账户。
 
+Harness `0.1.0-rc.8` 及以上版本禁止在 `.env` 中使用 `DSH_*` 名称，因此 `0.1.1` 改用 `FEISHU_CONTROL_*`。再次运行 `setup` 会自动迁移旧的 `DSH_FEISHU_*` 配置，并且不会打印已保存的密钥；旧名称仅在启动终端显式 `export` 时继续兼容。
+
 如果不知道自己的 `open_id`，向导会让你先使用 `ou_placeholder`。启动后私聊机器人，拒绝消息会显示你的真实 `open_id`；复制后再次运行同一个 `setup` 命令即可更新。
 
 安装后常用命令：
@@ -92,11 +94,11 @@ Desktop 用户不要另外运行 `start`；请完全退出并重新打开 DeepSe
 
 ```sh
 export DEEPSEEK_API_KEY=replace-with-your-deepseek-key
-export DSH_FEISHU_APP_ID=replace-with-your-app-id
-export DSH_FEISHU_APP_SECRET=replace-with-your-app-secret
-export DSH_FEISHU_ALLOWED_OPEN_IDS=replace-with-your-open-id
-export DSH_FEISHU_WORKSPACE=/absolute/path/to/a/project
-export DSH_PERMISSION_MODE=workspace-write
+export FEISHU_CONTROL_APP_ID=replace-with-your-app-id
+export FEISHU_CONTROL_APP_SECRET=replace-with-your-app-secret
+export FEISHU_CONTROL_ALLOWED_OPEN_IDS=replace-with-your-open-id
+export FEISHU_CONTROL_WORKSPACE=/absolute/path/to/a/project
+export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 ```
 
 多个 `open_id` 用英文逗号分隔。白名单为空或缺失时，机器人会拒绝所有消息。
@@ -127,7 +129,7 @@ dsh --profile feishu-control
 
 这里的 `feishu-control` 是 DSH profile 名称。npm 包同时提供同名的安装向导命令；向导最终仍然通过 `dsh --profile feishu-control` 启动 DeepSeek Harness。
 
-插件优先使用 `DSH_FEISHU_WORKSPACE` 作为 Agent 工作目录和 Harness 沙箱根目录；未设置时才使用启动 `dsh` 时所在的目录。请选择专用项目目录，保持 `DSH_PERMISSION_MODE=workspace-write`，不要使用用户主目录或文件系统根目录。
+插件优先使用 `FEISHU_CONTROL_WORKSPACE` 作为 Agent 工作目录和 Harness 沙箱根目录；未设置时才使用启动 `dsh` 时所在的目录。请选择专用项目目录，保持 `FEISHU_CONTROL_PERMISSION_MODE=workspace-write`，不要使用用户主目录或文件系统根目录。
 
 #### 从 GitHub 安装
 
@@ -146,8 +148,8 @@ npm 和插件市场安装使用预构建产物，不需要授权本包的构建�
 ```yaml
 - id: feishu-agent
   config:
-    cwd: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
-    allowedOpenIds: !!js "process.env.DSH_FEISHU_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
+    cwd: !!js process.env.FEISHU_CONTROL_WORKSPACE ?? process.cwd()
+    allowedOpenIds: !!js "process.env.FEISHU_CONTROL_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
     allowGroupChats: true
     requireMentionInGroups: true
 ```

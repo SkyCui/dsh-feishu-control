@@ -4,11 +4,25 @@ import { dirname, parse, resolve } from 'node:path'
 
 export const PROFILE_NAME = 'feishu-control'
 export const MANAGED_ENV_KEYS = [
+  'FEISHU_CONTROL_APP_ID',
+  'FEISHU_CONTROL_APP_SECRET',
+  'FEISHU_CONTROL_ALLOWED_OPEN_IDS',
+  'FEISHU_CONTROL_WORKSPACE',
+  'FEISHU_CONTROL_PERMISSION_MODE',
+] as const
+export const LEGACY_MANAGED_ENV_KEYS = [
   'DSH_FEISHU_APP_ID',
   'DSH_FEISHU_APP_SECRET',
   'DSH_FEISHU_ALLOWED_OPEN_IDS',
   'DSH_FEISHU_WORKSPACE',
   'DSH_PERMISSION_MODE',
+] as const
+const LEGACY_ENV_MIGRATIONS = [
+  ['DSH_FEISHU_APP_ID', 'FEISHU_CONTROL_APP_ID'],
+  ['DSH_FEISHU_APP_SECRET', 'FEISHU_CONTROL_APP_SECRET'],
+  ['DSH_FEISHU_ALLOWED_OPEN_IDS', 'FEISHU_CONTROL_ALLOWED_OPEN_IDS'],
+  ['DSH_FEISHU_WORKSPACE', 'FEISHU_CONTROL_WORKSPACE'],
+  ['DSH_PERMISSION_MODE', 'FEISHU_CONTROL_PERMISSION_MODE'],
 ] as const
 
 export interface LocalState {
@@ -48,15 +62,22 @@ function dotenvValue(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"`
 }
 
-export function updateDotenv(source: string, values: Record<string, string | undefined>): string {
+export function updateDotenv(
+  source: string,
+  values: Record<string, string | undefined>,
+  removeKeys: readonly string[] = [],
+): string {
   const pending = new Map(Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== undefined))
+  const removed = new Set(removeKeys)
   const lines = source === '' ? [] : source.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n')
   const output: string[] = []
 
   for (const line of lines) {
     const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/)
     const key = match?.[1]
-    if (key !== undefined && pending.has(key)) {
+    if (key !== undefined && removed.has(key)) {
+      continue
+    } else if (key !== undefined && pending.has(key)) {
       output.push(`${key}=${dotenvValue(pending.get(key)!)}`)
       pending.delete(key)
     } else {
@@ -80,15 +101,35 @@ export async function readHarnessEnv(dshHome: string): Promise<{ path: string, s
   }
 }
 
+export async function migrateLegacyHarnessEnv(dshHome: string): Promise<{
+  path: string
+  source: string
+  values: Record<string, string>
+  migrated: boolean
+}> {
+  const current = await readHarnessEnv(dshHome)
+  const migrated = LEGACY_ENV_MIGRATIONS.some(([legacy]) => Object.hasOwn(current.values, legacy))
+  if (!migrated) return { ...current, migrated: false }
+
+  const values: Record<string, string> = {}
+  for (const [legacy, replacement] of LEGACY_ENV_MIGRATIONS) {
+    const value = current.values[replacement] ?? current.values[legacy]
+    if (value !== undefined) values[replacement] = value
+  }
+  await writeHarnessEnv(dshHome, current.source, values, LEGACY_MANAGED_ENV_KEYS)
+  return { ...await readHarnessEnv(dshHome), migrated: true }
+}
+
 export async function writeHarnessEnv(
   dshHome: string,
   source: string,
   values: Record<string, string>,
+  removeKeys: readonly string[] = [],
 ): Promise<string> {
   await mkdir(dshHome, { recursive: true, mode: 0o700 })
   const path = resolve(dshHome, '.env')
   const temporary = resolve(dshHome, `.env.feishu-control-${process.pid}.tmp`)
-  await writeFile(temporary, updateDotenv(source, values), { encoding: 'utf8', mode: 0o600 })
+  await writeFile(temporary, updateDotenv(source, values, removeKeys), { encoding: 'utf8', mode: 0o600 })
   await chmod(temporary, 0o600)
   await rename(temporary, path)
   await chmod(path, 0o600)
@@ -143,18 +184,21 @@ export function profilePackageJsonPath(dshHome: string, profile = PROFILE_NAME):
   return resolve(dshHome, 'profiles', profile, 'package.json')
 }
 
-export async function isPluginInstalled(dshHome: string, profile = PROFILE_NAME): Promise<boolean> {
+export async function installedPluginSpec(dshHome: string, profile = PROFILE_NAME): Promise<string | undefined> {
   try {
     const manifest = JSON.parse(await readFile(profilePackageJsonPath(dshHome, profile), 'utf8')) as {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
     }
-    return manifest.dependencies?.['dsh-feishu-control'] !== undefined
-      || manifest.devDependencies?.['dsh-feishu-control'] !== undefined
+    return manifest.dependencies?.['dsh-feishu-control'] ?? manifest.devDependencies?.['dsh-feishu-control']
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
     throw error
   }
+}
+
+export async function isPluginInstalled(dshHome: string, profile = PROFILE_NAME): Promise<boolean> {
+  return await installedPluginSpec(dshHome, profile) !== undefined
 }
 
 export async function findInstalledProfiles(dshHome: string): Promise<string[]> {

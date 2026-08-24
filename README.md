@@ -46,6 +46,8 @@ The wizard checks `dsh` and `pnpm`, confirms that Harness has run successfully, 
 
 Feishu credentials are stored in `$DSH_HOME/.env` (normally `~/.dsh/.env`) with owner-only file permissions. The file is outside the project repository, but programs and Agent tools running as the same operating-system account may still read it; use a dedicated, restricted account where practical.
 
+Harness `0.1.0-rc.8` and newer reject `DSH_*` names in dotenv files. Version `0.1.1` therefore uses `FEISHU_CONTROL_*` names; rerunning `setup` automatically migrates the legacy `DSH_FEISHU_*` entries without printing the stored secret. Legacy `DSH_FEISHU_*` variables remain accepted only when explicitly exported by the launching shell.
+
 If you do not know your `open_id`, enter `ou_placeholder`. Start the bot and send it a private message; the refusal response shows your real `open_id`. Run the same setup command again to update it without editing configuration files.
 
 After installation:
@@ -80,11 +82,11 @@ Set these variables in the environment that launches `dsh`:
 
 ```sh
 export DEEPSEEK_API_KEY=replace-with-your-deepseek-key
-export DSH_FEISHU_APP_ID=replace-with-your-app-id
-export DSH_FEISHU_APP_SECRET=replace-with-your-app-secret
-export DSH_FEISHU_ALLOWED_OPEN_IDS=replace-with-your-open-id
-export DSH_FEISHU_WORKSPACE=/absolute/path/to/a/project
-export DSH_PERMISSION_MODE=workspace-write
+export FEISHU_CONTROL_APP_ID=replace-with-your-app-id
+export FEISHU_CONTROL_APP_SECRET=replace-with-your-app-secret
+export FEISHU_CONTROL_ALLOWED_OPEN_IDS=replace-with-your-open-id
+export FEISHU_CONTROL_WORKSPACE=/absolute/path/to/a/project
+export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 ```
 
 Separate multiple `open_id` values with commas. A missing or empty allowlist denies every message.
@@ -115,7 +117,7 @@ dsh --profile feishu-control
 
 `feishu-control` is the DSH profile name. The npm package also exposes a setup executable with the same name; the wizard ultimately starts DeepSeek Harness through `dsh --profile feishu-control`.
 
-The plugin prefers `DSH_FEISHU_WORKSPACE` as both the Agent working directory and Harness sandbox root, falling back to the directory from which `dsh` starts. Choose a dedicated project directory, keep `DSH_PERMISSION_MODE=workspace-write`, and never use your home directory or a filesystem root.
+The plugin prefers `FEISHU_CONTROL_WORKSPACE` as both the Agent working directory and Harness sandbox root, falling back to the directory from which `dsh` starts. Choose a dedicated project directory, keep `FEISHU_CONTROL_PERMISSION_MODE=workspace-write`, and never use your home directory or a filesystem root.
 
 #### GitHub
 
@@ -134,8 +136,8 @@ Group chats are disabled by default. To enable them, override the complete `feis
 ```yaml
 - id: feishu-agent
   config:
-    cwd: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
-    allowedOpenIds: !!js "process.env.DSH_FEISHU_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
+    cwd: !!js process.env.FEISHU_CONTROL_WORKSPACE ?? process.cwd()
+    allowedOpenIds: !!js "process.env.FEISHU_CONTROL_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
     allowGroupChats: true
     requireMentionInGroups: true
 ```

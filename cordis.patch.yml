@@ -4,8 +4,8 @@
 #   dsh --profile feishu-control
 - id: sandbox-policy
   config:
-    mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
-    workspaceRoot: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
+    mode: !!js process.env.FEISHU_CONTROL_PERMISSION_MODE ?? process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
+    workspaceRoot: !!js process.env.FEISHU_CONTROL_WORKSPACE ?? process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
 - insert:
     - id: feishu
       name: 'dsh-feishu-control/feishu'
@@ -14,7 +14,7 @@
     - id: feishu-agent
       name: 'dsh-feishu-control/feishu-agent'
       config:
-        cwd: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
-        allowedOpenIds: !!js "process.env.DSH_FEISHU_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
+        cwd: !!js process.env.FEISHU_CONTROL_WORKSPACE ?? process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
+        allowedOpenIds: !!js "(process.env.FEISHU_CONTROL_ALLOWED_OPEN_IDS ?? process.env.DSH_FEISHU_ALLOWED_OPEN_IDS)?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
         allowGroupChats: false
         requireMentionInGroups: true

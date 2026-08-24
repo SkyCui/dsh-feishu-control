@@ -416,8 +416,19 @@ describe('feishu-local apply', () => {
   })
 
   it('resolves credentials from the default env vars', async () => {
-    vi.stubEnv('DSH_FEISHU_APP_ID', 'cli_env')
-    vi.stubEnv('DSH_FEISHU_APP_SECRET', 'env_secret')
+    vi.stubEnv('FEISHU_CONTROL_APP_ID', 'cli_env')
+    vi.stubEnv('FEISHU_CONTROL_APP_SECRET', 'env_secret')
+    const ctx = new Context()
+    await ctx.plugin(FeishuRuntime)
+    await ctx.plugin(feishuLocalPlugin, {})
+    await expect(ctx.feishu.sendText({ chatId: 'ou', text: 'hi' })).resolves.toBeUndefined()
+  })
+
+  it('accepts legacy DSH-prefixed credentials from the inherited environment', async () => {
+    vi.stubEnv('FEISHU_CONTROL_APP_ID', undefined)
+    vi.stubEnv('FEISHU_CONTROL_APP_SECRET', undefined)
+    vi.stubEnv('DSH_FEISHU_APP_ID', 'cli_legacy')
+    vi.stubEnv('DSH_FEISHU_APP_SECRET', 'legacy_secret')
     const ctx = new Context()
     await ctx.plugin(FeishuRuntime)
     await ctx.plugin(feishuLocalPlugin, {})
@@ -434,6 +445,8 @@ describe('feishu-local apply', () => {
   })
 
   it('fails loud when credentials are absent', async () => {
+    vi.stubEnv('FEISHU_CONTROL_APP_ID', undefined)
+    vi.stubEnv('FEISHU_CONTROL_APP_SECRET', undefined)
     vi.stubEnv('DSH_FEISHU_APP_ID', undefined)
     vi.stubEnv('DSH_FEISHU_APP_SECRET', undefined)
     const ctx = new Context()
