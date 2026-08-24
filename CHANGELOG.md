@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.2 - 2026-08-24
+
+### Fixed
+
+- Prompt for an existing App ID and sender allowlist during repeated setup,
+  using the saved values as editable defaults instead of silently reusing them.
+- Keep an existing App Secret hidden and reusable without printing it.
+- Replace the unauthorized reply's environment-variable instruction with a
+  beginner-friendly open_id, setup-command, and restart workflow.
+
 ## 0.1.1 - 2026-08-24
 
 ### Fixed

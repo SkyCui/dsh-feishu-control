@@ -17,6 +17,7 @@ import {
   writeHarnessEnv,
   writeLocalState,
 } from './setup/config.ts'
+import { askRequired } from './setup/prompt.ts'
 
 interface Options {
   command: 'setup' | 'doctor' | 'start' | 'help' | 'version'
@@ -198,15 +199,6 @@ function printHelp(): void {
 `)
 }
 
-async function askRequired(prompter: Prompter, label: string, initial?: string, secret = false): Promise<string> {
-  let value = initial?.trim() || ''
-  while (value === '') {
-    value = secret ? await prompter.secret(label) : await prompter.text(label)
-    if (value === '') process.stdout.write('此项不能为空，请重新输入。\n')
-  }
-  return value
-}
-
 async function askWorkspace(prompter: Prompter, initial: string, dshHome: string): Promise<string> {
   let candidate = initial
   while (true) {
@@ -282,10 +274,10 @@ async function setup(options: Options): Promise<number> {
     }
 
     const current = await readHarnessEnv(dshHome)
-    const appId = await askRequired(
+    const appId = options.appId?.trim() || await askRequired(
       prompter,
       '请输入飞书 App ID',
-      options.appId || configuredValue(current.values, ENV.appId, LEGACY_ENV.appId),
+      configuredValue(current.values, ENV.appId, LEGACY_ENV.appId),
     )
     let appSecret = configuredValue(current.values, ENV.appSecret, LEGACY_ENV.appSecret) || ''
     if (appSecret !== '' && !await prompter.confirm('检测到已保存的 App Secret，是否继续使用？', true)) appSecret = ''
@@ -296,10 +288,10 @@ async function setup(options: Options): Promise<number> {
 如果暂时不知道，可输入 ou_placeholder。安装后启动机器人并私聊它，拒绝消息会显示你的 open_id；
 复制该值后再次运行本向导即可更新，不需要编辑配置文件。
 `)
-    const allowedOpenIds = await askRequired(
+    const allowedOpenIds = options.allowedOpenIds?.trim() || await askRequired(
       prompter,
       '请输入允许使用机器人的 open_id；多人用英文逗号分隔',
-      options.allowedOpenIds || configuredValue(current.values, ENV.allowedOpenIds, LEGACY_ENV.allowedOpenIds),
+      configuredValue(current.values, ENV.allowedOpenIds, LEGACY_ENV.allowedOpenIds),
     )
     const workspace = await askWorkspace(prompter, options.workspace || process.cwd(), dshHome)
 

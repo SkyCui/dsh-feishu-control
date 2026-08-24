@@ -58,7 +58,14 @@ pnpm dlx dsh-feishu-control setup
 
 Harness `0.1.0-rc.8` 及以上版本禁止在 `.env` 中使用 `DSH_*` 名称，因此 `0.1.1` 改用 `FEISHU_CONTROL_*`。再次运行 `setup` 会自动迁移旧的 `DSH_FEISHU_*` 配置，并且不会打印已保存的密钥；旧名称仅在启动终端显式 `export` 时继续兼容。
 
-如果不知道自己的 `open_id`，向导会让你先使用 `ou_placeholder`。启动后私聊机器人，拒绝消息会显示你的真实 `open_id`；复制后再次运行同一个 `setup` 命令即可更新。
+如果不知道自己的 `open_id`，按以下步骤完成首次授权：
+
+1. 首次运行向导时输入 `ou_placeholder`，完成其余配置并启动服务。
+2. 私聊飞书机器人，复制回复中显示的真实 `open_id`。
+3. 终端模式按 `Ctrl+C` 停止服务；Desktop 模式完全退出 Desktop。
+4. 再次运行 `pnpm dlx dsh-feishu-control@latest setup`。
+5. 当向导显示已有的 `[ou_placeholder]` 时，粘贴真实 `open_id` 覆盖它并完成配置。
+6. 重新启动终端服务，或重新打开 Desktop。此后白名单内的消息才会交给 Agent。
 
 安装后常用命令：
 
@@ -103,7 +110,7 @@ export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 
 多个 `open_id` 用英文逗号分隔。白名单为空或缺失时，机器人会拒绝所有消息。
 
-如果不知道自己的 `open_id`，可先配置一个不存在的值，例如 `ou_placeholder`，启动后私聊机器人。拒绝消息会显示发送者自己的 `open_id`，将其写回环境变量并重新启动。
+如果不知道自己的 `open_id`，可先配置一个不存在的值，例如 `ou_placeholder`，启动后私聊机器人。回复会显示发送者自己的 `open_id`；复制它，停止服务，再次运行 `setup` 替换占位值并重启。多个 `open_id` 仍使用英文逗号分隔。
 
 不要提交 `.env` 或真实凭证。本仓库的 `.env.example` 只包含占位值。
 

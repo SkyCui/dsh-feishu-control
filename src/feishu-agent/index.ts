@@ -177,7 +177,15 @@ export function apply(ctx: Context, config: Config): void {
     if (event.chatType === 'group' && !config.allowGroupChats) return
     if (event.chatType === 'group' && config.requireMentionInGroups && !event.mentioned) return
     if (!allowed.has(event.senderOpenId)) {
-      void sendText(event.chatId, `未授权：你的 open_id（${event.senderOpenId}）不在白名单中。请把它加入 FEISHU_CONTROL_ALLOWED_OPEN_IDS 后重启。`)
+      void sendText(event.chatId, `还差最后一步：当前飞书账号尚未授权。
+
+你的 open_id：
+${event.senderOpenId}
+
+请复制上面的 open_id，回到安装终端重新运行：
+pnpm dlx dsh-feishu-control@latest setup
+
+当提示“请输入允许使用机器人的 open_id”时，粘贴该值并完成配置，然后重启飞书控制服务。`)
         .catch(() => {})
       return
     }

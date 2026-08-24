@@ -48,7 +48,14 @@ Feishu credentials are stored in `$DSH_HOME/.env` (normally `~/.dsh/.env`) with 
 
 Harness `0.1.0-rc.8` and newer reject `DSH_*` names in dotenv files. Version `0.1.1` therefore uses `FEISHU_CONTROL_*` names; rerunning `setup` automatically migrates the legacy `DSH_FEISHU_*` entries without printing the stored secret. Legacy `DSH_FEISHU_*` variables remain accepted only when explicitly exported by the launching shell.
 
-If you do not know your `open_id`, enter `ou_placeholder`. Start the bot and send it a private message; the refusal response shows your real `open_id`. Run the same setup command again to update it without editing configuration files.
+If you do not know your `open_id`, use this first-authorization flow:
+
+1. Enter `ou_placeholder` during the first setup, finish the remaining prompts, and start the service.
+2. Privately message the Feishu bot and copy the real `open_id` shown in its reply.
+3. Press `Ctrl+C` to stop terminal mode, or fully quit Harness Desktop.
+4. Run `pnpm dlx dsh-feishu-control@latest setup` again.
+5. Replace the displayed `[ou_placeholder]` default with the real `open_id` and finish setup.
+6. Restart the terminal service or reopen Desktop. Allowlisted messages can then reach the Agent.
 
 After installation:
 
@@ -91,7 +98,7 @@ export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 
 Separate multiple `open_id` values with commas. A missing or empty allowlist denies every message.
 
-To discover your `open_id`, temporarily configure a nonexistent value such as `ou_placeholder`, start the profile, and privately message the bot. The refusal names the sender's own `open_id`; place that value in the environment and restart.
+To discover your `open_id`, temporarily configure a nonexistent value such as `ou_placeholder`, start the profile, and privately message the bot. Copy the sender `open_id` from the reply, stop the service, rerun `setup` to replace the placeholder, and restart. Continue separating multiple `open_id` values with commas.
 
 Never commit `.env` or real credentials. This repository's `.env.example` contains placeholders only.
 

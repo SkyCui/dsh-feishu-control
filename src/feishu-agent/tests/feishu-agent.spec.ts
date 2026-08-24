@@ -174,10 +174,14 @@ describe('feishu-agent allowlist', () => {
     expect(agents.created).toHaveLength(0)
   })
 
-  it('names the sender open_id in the refusal so it can be allowlisted', async () => {
+  it('guides a beginner through allowlisting the sender without exposing an env-var name', async () => {
     const { feishu } = await mount({ allowedOpenIds: ['ou_boss'] })
     await deliver(feishu, messageEvent({ senderOpenId: 'ou_stranger' }))
-    expect(feishu.sends[0]!.text).toContain('ou_stranger')
+    const refusal = feishu.sends[0]!.text
+    expect(refusal).toContain('ou_stranger')
+    expect(refusal).toContain('pnpm dlx dsh-feishu-control@latest setup')
+    expect(refusal).toContain('粘贴该值并完成配置，然后重启飞书控制服务')
+    expect(refusal).not.toContain('FEISHU_CONTROL_ALLOWED_OPEN_IDS')
   })
 
   it('swallows a failed rejection reply', async () => {
