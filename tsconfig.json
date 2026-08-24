@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "dsh-feishu-control": ["src/feishu/index.ts"],
+      "dsh-feishu-control/feishu": ["src/feishu/index.ts"],
+      "dsh-feishu-control/feishu/invariant": ["src/feishu/invariant.ts"],
+      "dsh-feishu-control/feishu-local": ["src/feishu-local/index.ts"],
+      "dsh-feishu-control/feishu-local/invariant": ["src/feishu-local/invariant.ts"],
+      "dsh-feishu-control/feishu-agent": ["src/feishu-agent/index.ts"],
+      "dsh-feishu-control/feishu-agent/invariant": ["src/feishu-agent/invariant.ts"]
+    }
+  },
+  "include": ["src", "tests", "vitest.config.ts"]
+}

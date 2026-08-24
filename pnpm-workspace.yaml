@@ -1,0 +1,10 @@
+packages:
+  - '.'
+
+# Lifecycle scripts such as npm pack are non-interactive. Never abort solely
+# because pnpm needs to refresh a modules directory produced by another pnpm.
+confirmModulesPurge: false
+
+allowBuilds:
+  esbuild: true
+  protobufjs: true

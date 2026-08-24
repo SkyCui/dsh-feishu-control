@@ -1,0 +1,144 @@
+{
+  "name": "dsh-feishu-control",
+  "version": "0.1.0",
+  "description": "Secure Feishu remote control bundle for DeepSeek Harness",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Skycui/dsh-feishu-control.git"
+  },
+  "homepage": "https://github.com/Skycui/dsh-feishu-control#readme",
+  "bugs": {
+    "url": "https://github.com/Skycui/dsh-feishu-control/issues"
+  },
+  "type": "module",
+  "main": "./lib/feishu/index.js",
+  "types": "./lib/feishu/index.d.ts",
+  "bin": {
+    "feishu-control": "./lib/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/feishu/index.d.ts",
+      "default": "./lib/feishu/index.js"
+    },
+    "./feishu": {
+      "types": "./lib/feishu/index.d.ts",
+      "default": "./lib/feishu/index.js"
+    },
+    "./feishu/invariant": {
+      "types": "./lib/feishu/invariant.d.ts",
+      "default": "./lib/feishu/invariant.js"
+    },
+    "./feishu-local": {
+      "types": "./lib/feishu-local/index.d.ts",
+      "default": "./lib/feishu-local/index.js"
+    },
+    "./feishu-local/invariant": {
+      "types": "./lib/feishu-local/invariant.d.ts",
+      "default": "./lib/feishu-local/invariant.js"
+    },
+    "./feishu-agent": {
+      "types": "./lib/feishu-agent/index.d.ts",
+      "default": "./lib/feishu-agent/index.js"
+    },
+    "./feishu-agent/invariant": {
+      "types": "./lib/feishu-agent/invariant.d.ts",
+      "default": "./lib/feishu-agent/invariant.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    ".env.example",
+    "README.md",
+    "README.zh.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/bundle-runtime.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint:package": "publint",
+    "check:package-types": "attw --pack . --profile esm-only --entrypoints . ./feishu ./feishu/invariant ./feishu-local ./feishu-local/invariant ./feishu-agent ./feishu-agent/invariant ./package.json",
+    "verify:package": "node scripts/verify-package.mjs",
+    "feishu-control": "pnpm build && node lib/cli.js",
+    "verify": "pnpm typecheck && pnpm test && pnpm build && pnpm verify:package && pnpm lint:package",
+    "prepare": "pnpm build",
+    "prepack": "pnpm verify"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "feishu",
+    "lark",
+    "agent",
+    "remote-control",
+    "cordis"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.1"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.1 <5",
+    "@deepseek-ai/dsh-agent": ">=0.1.0-rc.6 <0.1.1-0",
+    "@deepseek-ai/dsh-invariants": ">=0.1.0-rc.6 <0.1.1-0",
+    "@deepseek-ai/dsh-llm": ">=0.1.0-rc.6 <0.1.1-0",
+    "@deepseek-ai/dsh-session": ">=0.1.0-rc.6 <0.1.1-0",
+    "@deepseek-ai/dsh-user-approval": ">=0.1.0-rc.6 <0.1.1-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-agent": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-invariants": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-session": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-user-approval": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/dsh-agent": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-session": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-user-approval": "0.1.0-rc.6",
+    "@larksuiteoapi/node-sdk": "1.73.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "publint": "^0.3.24",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

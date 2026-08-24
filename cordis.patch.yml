@@ -1,0 +1,20 @@
+# dsh-feishu-control profile layer. Install with:
+#   dsh plugin --profile feishu-control add dsh-feishu-control
+# Then run:
+#   dsh --profile feishu-control
+- id: sandbox-policy
+  config:
+    mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
+    workspaceRoot: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
+- insert:
+    - id: feishu
+      name: 'dsh-feishu-control/feishu'
+    - id: feishu-local
+      name: 'dsh-feishu-control/feishu-local'
+    - id: feishu-agent
+      name: 'dsh-feishu-control/feishu-agent'
+      config:
+        cwd: !!js process.env.DSH_FEISHU_WORKSPACE ?? process.cwd()
+        allowedOpenIds: !!js "process.env.DSH_FEISHU_ALLOWED_OPEN_IDS?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
+        allowGroupChats: false
+        requireMentionInGroups: true
