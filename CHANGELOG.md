@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.4 - 2026-08-24
+
+### Changed
+
+- Use the explicit `dsh-feishu-control@latest` selector in every user-facing
+  registry installation and CLI command, including `dsh plugin add` and
+  `pnpm dlx` examples.
+
+### Fixed
+
+- Drive Feishu-created agents with the host profile's default model selection
+  (`agent-default-model`) when the `feishu-agent` config does not pin
+  `provider`/`model`, mirroring the one-shot `dsh -p "task"` runner. Previously
+  every Feishu message turned instantly with `agent ... has no provider/model`,
+  leaving the THINKING reaction stuck with no reply. Explicit config values
+  still win over the selection per field.
+
 ## 0.1.3 - 2026-08-24
 
 ### Changed

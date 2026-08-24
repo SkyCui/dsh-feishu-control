@@ -191,7 +191,7 @@ function printHelp(): void {
   feishu-control --help    显示帮助
 
 首次使用（无需克隆仓库）：
-  dsh plugin add --save-exact dsh-feishu-control
+  dsh plugin add --save-exact dsh-feishu-control@latest
   pnpm dlx dsh-feishu-control@latest setup
 
 重要：本插件不是 DeepSeek Harness 本体。使用前必须先安装 dsh，

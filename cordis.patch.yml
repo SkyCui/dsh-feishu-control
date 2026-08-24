@@ -1,5 +1,5 @@
 # dsh-feishu-control profile layer. Install with:
-#   dsh plugin --profile feishu-control add dsh-feishu-control
+#   dsh plugin --profile feishu-control add dsh-feishu-control@latest
 # Then run:
 #   dsh --profile feishu-control
 - id: sandbox-policy

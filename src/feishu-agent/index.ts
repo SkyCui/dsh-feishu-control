@@ -12,7 +12,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { FeishuCardActionEvent, FeishuEvent } from '../feishu/index.ts'
 import type {} from '../feishu/index.ts'
-import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { Agent, ModelSelection } from '@deepseek-ai/dsh-agent'
 import { SessionId, type SessionEvent } from '@deepseek-ai/dsh-session'
 import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
 // Side-effect type import: declaration-merges the approval waterfall answered below.
@@ -63,6 +63,16 @@ interface ChatState {
   readonly dispose: () => Promise<void>
   /** The latest inbound message id for this chat, used for completion reactions. */
   messageId: string
+}
+
+/**
+ * The host's shared default-model selection, mounted by the `dsh-base` bundle
+ * in every profile (the same selection the one-shot `dsh -p "task"` runner
+ * reads). Read structurally so this consumer never hard-depends on the
+ * `@deepseek-ai/dsh-agent-default-model` package.
+ */
+interface DefaultModelService {
+  currentSelection(): ModelSelection
 }
 
 /** One pending approval question awaiting a card click or a chat text answer. */
@@ -166,6 +176,24 @@ export function apply(ctx: Context, config: Config): void {
     }
   }
 
+  /**
+   * Resolve the model route for a created agent: an explicit plugin-config
+   * value wins per field, otherwise the host's shared default-model selection
+   * (mounted by `dsh-base`) fills the gap — mirroring the one-shot
+   * `dsh -p "task"` runner so a Feishu-created agent never turns with an empty
+   * provider/model. Returns `undefined` per field when neither source has it.
+   */
+  function modelRoute(): { provider?: string; model?: string } {
+    const defaultModel = ctx.get('agentDefaultModel') as DefaultModelService | undefined
+    const selection = defaultModel?.currentSelection()
+    const provider = config.provider ?? selection?.provider
+    const model = config.model ?? selection?.model
+    return {
+      ...provider !== undefined ? { provider } : {},
+      ...model !== undefined ? { model } : {},
+    }
+  }
+
   feishu.subscribe(async (event) => {
     if (stopping) return
     if (event.kind === 'card-action') {
@@ -217,10 +245,7 @@ pnpm dlx dsh-feishu-control@latest setup
       const handle = await agents.create({
         sessionId: SessionId(randomUUID()),
         ...config.cwd !== undefined ? { meta: { cwd: config.cwd } } : {},
-        agentOptions: {
-          ...config.provider !== undefined ? { provider: config.provider } : {},
-          ...config.model !== undefined ? { model: config.model } : {},
-        },
+        agentOptions: modelRoute(),
       })
       chat = {
         chatId: event.chatId,

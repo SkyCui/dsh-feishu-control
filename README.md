@@ -33,7 +33,7 @@ This plugin is not DeepSeek Harness itself and does not install or configure Har
 No repository clone or YAML editing is required. Install through the DeepSeek Harness Desktop marketplace, or run its standard command in the built-in terminal:
 
 ```sh
-dsh plugin add --save-exact dsh-feishu-control
+dsh plugin add --save-exact dsh-feishu-control@latest
 ```
 
 Then run the configuration wizard in a normal terminal:
@@ -107,7 +107,7 @@ Never commit `.env` or real credentials. This repository's `.env.example` contai
 #### DeepSeek Harness Desktop marketplace
 
 ```sh
-dsh plugin add --save-exact dsh-feishu-control
+dsh plugin add --save-exact dsh-feishu-control@latest
 pnpm dlx dsh-feishu-control@latest setup
 ```
 
@@ -116,7 +116,7 @@ Fully quit and reopen DeepSeek Harness Desktop after installation and configurat
 #### Standalone terminal Profile
 
 ```sh
-dsh plugin --profile feishu-control add --save-exact dsh-feishu-control
+dsh plugin --profile feishu-control add --save-exact dsh-feishu-control@latest
 dsh --profile feishu-control --dump-config
 cd /path/to/the/workspace-the-agent-may-control
 dsh --profile feishu-control
@@ -135,6 +135,16 @@ dsh plugin --profile feishu-control add --save-exact github:SkyCui/dsh-feishu-co
 A Git dependency runs this package's `prepare` build. pnpm 10 and newer block dependency install scripts until explicitly allowed. If the first install is rejected, follow the `dsh`/pnpm diagnostic, copy its exact package key into that profile's `pnpm-workspace.yaml` `allowBuilds` section, and retry with a pinned commit SHA. Authorize only trusted source.
 
 Registry and marketplace installs contain prebuilt artifacts and do not require build-script approval for this package.
+
+## Model routing
+
+Agent sessions created by the bot use the current Profile's default model
+selection (the `agent-default-model` composition entry shipped by `dsh-base`),
+matching the one-shot `dsh -p "task"` runner, so no extra configuration is
+needed to get a model. To pin a different model for Feishu sessions, override
+the complete `feishu-agent` configuration in the Profile's `cordis.patch.yml`
+and add `provider` and `model`; explicit configuration wins over the default
+selection.
 
 ## Group chats
 

@@ -102,12 +102,14 @@ interface Mounted {
 async function mount(
   config: Record<string, unknown> = {},
   feishuOptions: { failSend?: boolean; failReaction?: boolean; failSendCard?: boolean } = {},
+  provides: Record<string, unknown> = {},
 ): Promise<Mounted> {
   const ctx = new Context()
   const feishu = makeFeishu(feishuOptions)
   const agents = makeAgents()
   ctx.provide('feishu', feishu)
   ctx.provide('agents', agents)
+  for (const [name, value] of Object.entries(provides)) ctx.provide(name, value)
   await ctx.plugin(ApprovalService)
   const fiber = await ctx.plugin(feishuAgent, { allowedOpenIds: ['ou_user'], ...config })
   return { ctx, fiber, feishu, agents }
@@ -609,5 +611,47 @@ describe('feishu-agent approval card bridge', () => {
       'approval/asked',
       'approval/decided',
     ])
+  })
+})
+
+describe('feishu-agent default model resolution', () => {
+  const selection = { provider: 'deepseek-official', model: 'deepseek-v4-flash' }
+
+  it('inherits provider/model from the shared default-model service', async () => {
+    const { feishu, agents } = await mount({}, {}, { agentDefaultModel: { currentSelection: () => selection } })
+    await deliver(feishu, messageEvent())
+    expect(agents.createOptions[0]).toMatchObject({
+      agentOptions: { provider: 'deepseek-official', model: 'deepseek-v4-flash' },
+    })
+  })
+
+  it('prefers explicit config provider/model over the default selection', async () => {
+    const { feishu, agents } = await mount(
+      { provider: 'custom', model: 'custom-model' },
+      {},
+      { agentDefaultModel: { currentSelection: () => selection } },
+    )
+    await deliver(feishu, messageEvent())
+    expect(agents.createOptions[0]).toMatchObject({
+      agentOptions: { provider: 'custom', model: 'custom-model' },
+    })
+  })
+
+  it('fills only the field the config does not pin', async () => {
+    const { feishu, agents } = await mount(
+      { model: 'pinned-model' },
+      {},
+      { agentDefaultModel: { currentSelection: () => selection } },
+    )
+    await deliver(feishu, messageEvent())
+    expect(agents.createOptions[0]).toMatchObject({
+      agentOptions: { provider: 'deepseek-official', model: 'pinned-model' },
+    })
+  })
+
+  it('keeps empty agent options without a selection service or config', async () => {
+    const { feishu, agents } = await mount()
+    await deliver(feishu, messageEvent())
+    expect((agents.createOptions[0] as { agentOptions: unknown }).agentOptions).toEqual({})
   })
 })

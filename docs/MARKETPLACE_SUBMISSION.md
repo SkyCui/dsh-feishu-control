@@ -28,7 +28,7 @@ coded text fallback, and group chats disabled by default.
 ## Install
 
 ```sh
-dsh plugin add --save-exact dsh-feishu-control
+dsh plugin add --save-exact dsh-feishu-control@latest
 pnpm dlx dsh-feishu-control@latest setup
 ```
 

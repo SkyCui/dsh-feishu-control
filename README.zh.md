@@ -33,7 +33,7 @@
 不需要下载源码，也不需要编辑 YAML。先在 DeepSeek Harness Desktop 的插件广场安装，或在其内置终端运行标准安装命令：
 
 ```sh
-dsh plugin add --save-exact dsh-feishu-control
+dsh plugin add --save-exact dsh-feishu-control@latest
 ```
 
 然后在普通终端运行配置向导：
@@ -119,7 +119,7 @@ export FEISHU_CONTROL_PERMISSION_MODE=workspace-write
 #### DeepSeek Harness Desktop 插件广场
 
 ```sh
-dsh plugin add --save-exact dsh-feishu-control
+dsh plugin add --save-exact dsh-feishu-control@latest
 pnpm dlx dsh-feishu-control@latest setup
 ```
 
@@ -128,7 +128,7 @@ pnpm dlx dsh-feishu-control@latest setup
 #### 独立终端 Profile
 
 ```sh
-dsh plugin --profile feishu-control add --save-exact dsh-feishu-control
+dsh plugin --profile feishu-control add --save-exact dsh-feishu-control@latest
 dsh --profile feishu-control --dump-config
 cd /path/to/the/workspace-the-agent-may-control
 dsh --profile feishu-control
@@ -147,6 +147,14 @@ dsh plugin --profile feishu-control add --save-exact github:SkyCui/dsh-feishu-co
 Git 安装会执行本包的 `prepare` 构建脚本。pnpm 10 及以上默认阻止依赖安装脚本；第一次安装若被拒绝，请按照 `dsh`/pnpm 输出，把精确的包键加入该 profile 的 `pnpm-workspace.yaml` 中的 `allowBuilds`，然后使用固定 commit SHA 重试。只应授权可信源码。
 
 npm 和插件市场安装使用预构建产物，不需要授权本包的构建脚本。
+
+## 模型路由
+
+机器人创建的 Agent 会话默认使用当前 Profile 的默认模型选择（`dsh-base` 提供的
+`agent-default-model` 组合条目），与一次性命令 `dsh -p "task"` 一致，因此不需要
+额外配置即可获得模型。若想为飞书会话固定不同的模型，在 Profile 的
+`cordis.patch.yml` 中覆盖 `feishu-agent` 的完整配置并加上 `provider` 与 `model`
+字段；显式配置优先于默认选择。
 
 ## 群聊
 
