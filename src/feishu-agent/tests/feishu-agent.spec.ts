@@ -615,17 +615,74 @@ describe('feishu-agent approval card bridge', () => {
 })
 
 describe('feishu-agent default model resolution', () => {
-  const selection = { provider: 'deepseek-official', model: 'deepseek-v4-flash' }
+  /** The create call for the first session, cast for optional-field access. */
+  const createCall = (agents: ReturnType<typeof makeAgents>) =>
+    agents.createOptions[0] as {
+      agentOptions?: Record<string, string>
+      setup?: (agentCtx: Context) => void
+    }
 
-  it('inherits provider/model from the shared default-model service', async () => {
-    const { feishu, agents } = await mount({}, {}, { agentDefaultModel: { currentSelection: () => selection } })
+  /** Execute the real model-selection waterfalls installed by an agent setup. */
+  async function modelHarness(setup: ((agentCtx: Context) => void) | undefined) {
+    if (setup === undefined) throw new Error('expected model-selection setup')
+    const agentCtx = new Context()
+    setup(agentCtx)
+    const waterfall = agentCtx.waterfall.bind(agentCtx) as (...args: unknown[]) => unknown
+    return {
+      async request(inherited: Record<string, unknown> = {}) {
+        await waterfall(
+          'system-prompt/assemble',
+          {},
+          {},
+          async () => ({ variables: {} }),
+        )
+        return await waterfall(
+          'agent/request',
+          {},
+          async () => inherited,
+        ) as Record<string, unknown>
+      },
+      dispose: () => agentCtx.fiber.dispose(),
+    }
+  }
+
+  it('inherits the live shared selection, including reasoning effort and later changes', async () => {
+    let selection = {
+      provider: 'deepseek-official',
+      model: 'deepseek-v4-flash',
+      reasoningEffort: 'high',
+    }
+    const { feishu, agents } = await mount(
+      {},
+      {},
+      { agentDefaultModel: { currentSelection: () => selection } },
+    )
     await deliver(feishu, messageEvent())
     expect(agents.createOptions[0]).toMatchObject({
       agentOptions: { provider: 'deepseek-official', model: 'deepseek-v4-flash' },
     })
+    const harness = await modelHarness(createCall(agents).setup)
+    await expect(harness.request()).resolves.toEqual({
+      provider: 'deepseek-official',
+      model: 'deepseek-v4-flash',
+      reasoningEffort: 'high',
+    })
+
+    selection = {
+      provider: 'local-provider',
+      model: 'local-model',
+      reasoningEffort: 'medium',
+    }
+    await expect(harness.request()).resolves.toEqual({
+      provider: 'local-provider',
+      model: 'local-model',
+      reasoningEffort: 'medium',
+    })
+    await harness.dispose()
   })
 
-  it('prefers explicit config provider/model over the default selection', async () => {
+  it('prefers explicit config provider/model and skips the selection setup', async () => {
+    const selection = { provider: 'deepseek-official', model: 'deepseek-v4-flash' }
     const { feishu, agents } = await mount(
       { provider: 'custom', model: 'custom-model' },
       {},
@@ -635,9 +692,15 @@ describe('feishu-agent default model resolution', () => {
     expect(agents.createOptions[0]).toMatchObject({
       agentOptions: { provider: 'custom', model: 'custom-model' },
     })
+    expect(createCall(agents).setup).toBeUndefined()
   })
 
-  it('fills only the field the config does not pin', async () => {
+  it('pins one field while the other field and reasoning effort stay live', async () => {
+    let selection = {
+      provider: 'deepseek-official',
+      model: 'deepseek-v4-flash',
+      reasoningEffort: 'high',
+    }
     const { feishu, agents } = await mount(
       { model: 'pinned-model' },
       {},
@@ -647,11 +710,30 @@ describe('feishu-agent default model resolution', () => {
     expect(agents.createOptions[0]).toMatchObject({
       agentOptions: { provider: 'deepseek-official', model: 'pinned-model' },
     })
+    const harness = await modelHarness(createCall(agents).setup)
+    await expect(harness.request()).resolves.toEqual({
+      provider: 'deepseek-official',
+      model: 'pinned-model',
+      reasoningEffort: 'high',
+    })
+
+    selection = {
+      provider: 'local-provider',
+      model: 'ignored-default-model',
+      reasoningEffort: 'low',
+    }
+    await expect(harness.request()).resolves.toEqual({
+      provider: 'local-provider',
+      model: 'pinned-model',
+      reasoningEffort: 'low',
+    })
+    await harness.dispose()
   })
 
   it('keeps empty agent options without a selection service or config', async () => {
     const { feishu, agents } = await mount()
     await deliver(feishu, messageEvent())
     expect((agents.createOptions[0] as { agentOptions: unknown }).agentOptions).toEqual({})
+    expect(createCall(agents).setup).toBeUndefined()
   })
 })

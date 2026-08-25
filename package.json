@@ -1,6 +1,6 @@
 {
   "name": "dsh-feishu-control",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Secure Feishu remote control bundle for DeepSeek Harness",
   "repository": {
     "type": "git",

@@ -18,3 +18,8 @@
         allowedOpenIds: !!js "(process.env.FEISHU_CONTROL_ALLOWED_OPEN_IDS ?? process.env.DSH_FEISHU_ALLOWED_OPEN_IDS)?.split(',').map(value => value.trim()).filter(Boolean) ?? []"
         allowGroupChats: false
         requireMentionInGroups: true
+        # Optional model route. Each variable pins only its own field; every
+        # unset field and reasoning effort follow the profile's live
+        # `agent-default-model`; set both to opt into a fully fixed route.
+        provider: !!js process.env.FEISHU_CONTROL_PROVIDER
+        model: !!js process.env.FEISHU_CONTROL_MODEL

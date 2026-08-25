@@ -12,7 +12,12 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { FeishuCardActionEvent, FeishuEvent } from '../feishu/index.ts'
 import type {} from '../feishu/index.ts'
-import type { Agent, ModelSelection } from '@deepseek-ai/dsh-agent'
+import {
+  installModelSelection,
+  type Agent,
+  type ModelSelection,
+  type ModelSelectionRef,
+} from '@deepseek-ai/dsh-agent'
 import { SessionId, type SessionEvent } from '@deepseek-ai/dsh-session'
 import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
 // Side-effect type import: declaration-merges the approval waterfall answered below.
@@ -183,14 +188,34 @@ export function apply(ctx: Context, config: Config): void {
    * `dsh -p "task"` runner so a Feishu-created agent never turns with an empty
    * provider/model. Returns `undefined` per field when neither source has it.
    */
-  function modelRoute(): { provider?: string; model?: string } {
-    const defaultModel = ctx.get('agentDefaultModel') as DefaultModelService | undefined
-    const selection = defaultModel?.currentSelection()
+  function modelRoute(selection: ModelSelection | undefined): { provider?: string; model?: string } {
     const provider = config.provider ?? selection?.provider
     const model = config.model ?? selection?.model
     return {
       ...provider !== undefined ? { provider } : {},
       ...model !== undefined ? { model } : {},
+    }
+  }
+
+  /**
+   * Keep the agent's request-time selection connected to the profile service.
+   * `installModelSelection` snapshots this getter at prompt assembly, then uses
+   * that same snapshot for the matching request. Explicit config wins per
+   * field; every unpinned field and reasoning effort remain live defaults.
+   */
+  function liveModelSelection(defaultModel: DefaultModelService): ModelSelectionRef {
+    return {
+      get current() {
+        const selection = defaultModel.currentSelection()
+        return {
+          provider: config.provider ?? selection.provider,
+          model: config.model ?? selection.model,
+          ...selection.reasoningEffort !== undefined
+            ? { reasoningEffort: selection.reasoningEffort }
+            : {},
+        }
+      },
+      assembled: undefined,
     }
   }
 
@@ -242,10 +267,22 @@ pnpm dlx dsh-feishu-control@latest setup
     void react(event.messageId, 'THINKING').catch(() => {})
     let chat = chats.get(event.chatId)
     if (chat === undefined) {
+      // Created agents inherit the host's default model selection unless both
+      // route fields are pinned. A request-time getter keeps every unpinned
+      // field and reasoning effort connected to later shared-default changes.
+      const defaultModel = ctx.get('agentDefaultModel') as DefaultModelService | undefined
+      const selection = defaultModel?.currentSelection()
+      const fullyPinned = config.provider !== undefined && config.model !== undefined
+      const selectionRef = defaultModel !== undefined && !fullyPinned
+        ? liveModelSelection(defaultModel)
+        : undefined
       const handle = await agents.create({
         sessionId: SessionId(randomUUID()),
         ...config.cwd !== undefined ? { meta: { cwd: config.cwd } } : {},
-        agentOptions: modelRoute(),
+        agentOptions: modelRoute(selection),
+        ...(selectionRef !== undefined
+          ? { setup: (agentCtx) => { installModelSelection(agentCtx, selectionRef) } }
+          : {}),
       })
       chat = {
         chatId: event.chatId,

@@ -139,12 +139,26 @@ Registry and marketplace installs contain prebuilt artifacts and do not require 
 ## Model routing
 
 Agent sessions created by the bot use the current Profile's default model
-selection (the `agent-default-model` composition entry shipped by `dsh-base`),
-matching the one-shot `dsh -p "task"` runner, so no extra configuration is
-needed to get a model. To pin a different model for Feishu sessions, override
-the complete `feishu-agent` configuration in the Profile's `cordis.patch.yml`
-and add `provider` and `model`; explicit configuration wins over the default
-selection.
+selection (the `agent-default-model` composition entry shipped by `dsh-base`,
+also read by the Desktop GUI and the one-shot `dsh -p "task"` runner), including
+its reasoning effort, so no extra model configuration is needed. On each new
+turn, unpinned fields read the current shared default; one in-flight turn keeps
+the selection captured when its prompt was assembled.
+
+To pin a different model for Feishu sessions, either:
+
+- **Environment variables** (no YAML editing): set `FEISHU_CONTROL_PROVIDER`
+  and/or `FEISHU_CONTROL_MODEL` in `$DSH_HOME/.env`, then restart the service.
+  Each variable pins only its own field. While a route field remains unset, it
+  and reasoning effort continue to follow the Profile's shared default. Setting
+  both opts into a fully fixed route instead.
+- **Profile configuration**: override the complete `feishu-agent` configuration
+  in the Profile's `cordis.patch.yml` and add `provider` and/or `model`;
+  explicit configuration wins per field over the default selection.
+
+Note that a `cordis.patch.yml` entry replaces the targeted row's whole
+`config`, so a full override must restate the other fields (`cwd`,
+`allowedOpenIds`, `allowGroupChats`, `requireMentionInGroups`).
 
 ## Group chats
 

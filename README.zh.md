@@ -151,10 +151,23 @@ npm 和插件市场安装使用预构建产物，不需要授权本包的构建�
 ## 模型路由
 
 机器人创建的 Agent 会话默认使用当前 Profile 的默认模型选择（`dsh-base` 提供的
-`agent-default-model` 组合条目），与一次性命令 `dsh -p "task"` 一致，因此不需要
-额外配置即可获得模型。若想为飞书会话固定不同的模型，在 Profile 的
-`cordis.patch.yml` 中覆盖 `feishu-agent` 的完整配置并加上 `provider` 与 `model`
-字段；显式配置优先于默认选择。
+`agent-default-model` 组合条目；Desktop GUI 与一次性命令 `dsh -p "task"` 也会读取
+这份共享选择），并沿用其中的推理强度（reasoning effort），因此无需额外配置模型。
+每次开始新一轮对话时，未固定的字段都会读取当时的共享默认值；已经在执行的一轮会
+继续使用组装提示词时取得的同一份选择。
+
+若想为飞书会话固定不同的模型，任选其一：
+
+- **环境变量**（无需编辑 YAML）：在 `$DSH_HOME/.env` 设置
+  `FEISHU_CONTROL_PROVIDER` 和/或 `FEISHU_CONTROL_MODEL` 后重启服务。每个变量只
+  固定自己的字段；只要还有路由字段未设置，该字段与推理强度就继续跟随 Profile 的
+  共享默认选择。两项都设置则选择完全固定路由。
+- **Profile 配置**：在插件所在 Profile 的 `cordis.patch.yml` 中覆盖完整的
+  `feishu-agent` 配置并加上 `provider` 和/或 `model` 字段；显式配置按字段优先于
+  默认选择。
+
+注意：`cordis.patch.yml` 的补丁会替换目标行的整个 `config`，因此覆盖时必须写全
+其余字段（`cwd`、`allowedOpenIds`、`allowGroupChats`、`requireMentionInGroups`）。
 
 ## 群聊
 

@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.5 - 2026-08-25
+
+### Changed
+
+- Install a live reference to the shared model selection on Feishu sessions,
+  so unpinned route fields and reasoning effort are resolved for every turn
+  instead of being frozen at session creation. Fully pinned routes stay fixed;
+  partially pinned routes keep their remaining fields live.
+- Expose an optional env-var model route (`FEISHU_CONTROL_PROVIDER` and
+  `FEISHU_CONTROL_MODEL`) in the bundle patch; leaving them unset inherits the
+  profile default, so no deployment needs to hardcode a model.
+
 ## 0.1.4 - 2026-08-24
 
 ### Changed
